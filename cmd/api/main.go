@@ -18,11 +18,20 @@ func main() {
 
 	// cli flags
 	var (
-		// Change this line in your main.go:
 		apiURL        = flag.String("url", "", "API base URL")
 		apiKey        = flag.String("key", "", "API key")
 		walletAddress = flag.String("wallet", "", "Wallet address to query")
+		// Query parameter flags
+		limit           = flag.Int("limit", 10, "Limit number of transactions (default: 10)")
+		cursor          = flag.String("cursor", "", "Cursor for pagination")
+		order           = flag.String("order", "DESC", "Order: ASC or DESC (default: DESC)")
+		fromDate        = flag.String("from-date", "", "From date (format: seconds or datestring)")
+		toDate          = flag.String("to-date", "", "To date (format: seconds or datestring)")
+		includeInternal = flag.Bool("include-internal", false, "Include internal transactions")
+		nftMetadata     = flag.Bool("nft-metadata", false, "Include NFT metadata")
 	)
+
+	//
 	flag.Parse()
 
 	// get configs from env or flags
@@ -42,7 +51,17 @@ func main() {
 
 	// Fetch and display transaction stats
 	log.Printf("Fetching transaction stats for wallet: %s", address)
-	if err := wallet.GetTxByWallet(baseURL, key, address); err != nil {
+	queryParams := wallet.QueryParams{
+		Limit:                       *limit,
+		Cursor:                      *cursor,
+		Order:                       *order,
+		FromDate:                    *fromDate,
+		ToDate:                      *toDate,
+		IncludeInternalTransactions: *includeInternal,
+		NftMetadata:                 *nftMetadata,
+	}
+
+	if err := wallet.GetTxByWallet(baseURL, key, address, queryParams); err != nil {
 		log.Fatalf("Error: %v", err)
 	}
 

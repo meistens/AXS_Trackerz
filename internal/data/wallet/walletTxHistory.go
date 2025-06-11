@@ -8,51 +8,6 @@ import (
 	"strings"
 )
 
-// Moralis Wallet History API Response Structure
-type APIResponse struct {
-	Page     int      `json:"page"`
-	PageSize int      `json:"page_size"`
-	Cursor   string   `json:"cursor"`
-	Result   []Result `json:"result"`
-}
-
-type Result struct {
-	Hash                     string `json:"hash"`
-	Nonce                    string `json:"nonce"`
-	TransactionIndex         string `json:"transaction_index"`
-	FromAddress              string `json:"from_address"`
-	ToAddress                string `json:"to_address"`
-	Value                    string `json:"value"`
-	Gas                      string `json:"gas"`
-	GasPrice                 string `json:"gas_price"`
-	GasUsed                  string `json:"gas_used"`
-	CumulativeGasUsed        string `json:"cumulative_gas_used"`
-	InputData                string `json:"input"`
-	ReceiptContractAddress   string `json:"receipt_contract_address"`
-	ReceiptCumulativeGasUsed string `json:"receipt_cumulative_gas_used"`
-	ReceiptGasUsed           string `json:"receipt_gas_used"`
-	ReceiptStatus            string `json:"receipt_status"`
-	BlockTimestamp           string `json:"block_timestamp"`
-	BlockNumber              string `json:"block_number"`
-	BlockHash                string `json:"block_hash"`
-}
-
-// What you want to display
-type TxDetails struct {
-	TransactionHash string `json:"transaction_hash"`
-	FromAddress     string `json:"from_address"`
-	ToAddress       string `json:"to_address"`
-	Value           string `json:"value"`
-	BlockTimestamp  string `json:"block_timestamp"`
-}
-
-// Client struct
-type Client struct {
-	HTTPClient *http.Client
-	BaseUrl    string
-	APIKey     string
-}
-
 // function creates a new wallet API client
 func NewClient(baseurl string, apikey string) *Client {
 	return &Client{
@@ -63,10 +18,11 @@ func NewClient(baseurl string, apikey string) *Client {
 }
 
 // function fetches wallet transaction history
-func (c *Client) getTokensByWallet(walletAddr string) ([]*TxDetails, error) {
+func (c *Client) getTokensByWallet(walletAddr string, params QueryParams) ([]*TxDetails, error) {
+
 	// Build the correct URL for wallet history
-	baseURL := strings.TrimSuffix(c.BaseUrl, "/tokens")
-	historyURL := fmt.Sprintf("%s/%s/history", baseURL, walletAddr)
+	baseURL := strings.TrimSuffix(c.BaseUrl, "/")
+	historyURL := fmt.Sprintf("%s/wallets/%s/history", baseURL, walletAddr)
 
 	req, err := http.NewRequest("GET", historyURL, nil)
 	if err != nil {
@@ -76,6 +32,30 @@ func (c *Client) getTokensByWallet(walletAddr string) ([]*TxDetails, error) {
 	req.Header.Set("X-API-Key", c.APIKey)
 	query := req.URL.Query()
 	query.Add("chain", "ronin")
+
+	// Add all query parameters
+	if params.Limit > 0 {
+		query.Add("limit", fmt.Sprintf("%d", params.Limit))
+	}
+	if params.Cursor != "" {
+		query.Add("cursor", params.Cursor)
+	}
+	if params.Order != "" {
+		query.Add("order", params.Order)
+	}
+	if params.FromDate != "" {
+		query.Add("from_date", params.FromDate)
+	}
+	if params.ToDate != "" {
+		query.Add("to_date", params.ToDate)
+	}
+	if params.IncludeInternalTransactions {
+		query.Add("include_internal_transactions", "true")
+	}
+	if params.NftMetadata {
+		query.Add("nft_metadata", "true")
+	}
+
 	req.URL.RawQuery = query.Encode()
 
 	res, err := c.HTTPClient.Do(req)
@@ -140,9 +120,9 @@ func displayStats(allTxs []*TxDetails) {
 }
 
 // export zone
-func GetTxByWallet(baseURL string, apiKey string, walletAddr string) error {
+func GetTxByWallet(baseURL string, apiKey string, walletAddr string, params QueryParams) error {
 	client := NewClient(baseURL, apiKey)
-	txs, err := client.getTokensByWallet(walletAddr)
+	txs, err := client.getTokensByWallet(walletAddr, params)
 	if err != nil {
 		return fmt.Errorf("failed to fetch transaction history: %w", err)
 	}
