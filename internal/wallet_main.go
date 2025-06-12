@@ -1,4 +1,4 @@
-package wallet
+package internal
 
 import (
 	"encoding/json"
@@ -8,17 +8,8 @@ import (
 	"strings"
 )
 
-// function creates a new wallet API client
-func NewClient(baseurl string, apikey string) *Client {
-	return &Client{
-		HTTPClient: &http.Client{},
-		BaseUrl:    baseurl,
-		APIKey:     apikey,
-	}
-}
-
 // function fetches wallet transaction history
-func (c *Client) getTokensByWallet(walletAddr string, params QueryParams) ([]*TxDetails, error) {
+func (c *Client) GetTokensByWallet(walletAddr string, params QueryParams) ([]*TxDetails, error) {
 
 	// Build the correct URL for wallet history
 	baseURL := strings.TrimSuffix(c.BaseUrl, "/")
@@ -100,7 +91,7 @@ func (c *Client) getTokensByWallet(walletAddr string, params QueryParams) ([]*Tx
 }
 
 // display all transaction history
-func displayStats(allTxs []*TxDetails) {
+func DisplayStats(allTxs []*TxDetails) {
 	if len(allTxs) == 0 {
 		fmt.Println("No transactions found")
 		return
@@ -117,15 +108,4 @@ func displayStats(allTxs []*TxDetails) {
 		fmt.Printf("\n")
 	}
 	fmt.Printf("==================================\n")
-}
-
-// export zone
-func GetTxByWallet(baseURL string, apiKey string, walletAddr string, params QueryParams) error {
-	client := NewClient(baseURL, apiKey)
-	txs, err := client.getTokensByWallet(walletAddr, params)
-	if err != nil {
-		return fmt.Errorf("failed to fetch transaction history: %w", err)
-	}
-	displayStats(txs)
-	return nil
 }

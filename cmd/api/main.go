@@ -7,7 +7,7 @@ import (
 
 	"github.com/dotenv-org/godotenvvault"
 
-	"cmd/internal/data/wallet"
+	"cmd/internal"
 )
 
 func main() {
@@ -51,7 +51,7 @@ func main() {
 
 	// Fetch and display transaction stats
 	log.Printf("Fetching transaction stats for wallet: %s", address)
-	queryParams := wallet.QueryParams{
+	queryParams := internal.QueryParams{
 		Limit:                       *limit,
 		Cursor:                      *cursor,
 		Order:                       *order,
@@ -61,7 +61,7 @@ func main() {
 		NftMetadata:                 *nftMetadata,
 	}
 
-	if err := wallet.GetTxByWallet(baseURL, key, address, queryParams); err != nil {
+	if err := internal.GetTxByWallet(baseURL, key, address, queryParams); err != nil {
 		log.Fatalf("Error: %v", err)
 	}
 

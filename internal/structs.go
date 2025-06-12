@@ -1,4 +1,4 @@
-package wallet
+package internal
 
 import "net/http"
 
@@ -167,4 +167,15 @@ type TxDetails struct {
 	ToAddress       string `json:"to_address"`
 	Value           string `json:"value"`
 	BlockTimestamp  string `json:"block_timestamp"`
+}
+
+// ERC20 Token Transfers By Wallet
+type Erc20Tokens struct {
+	TokenName        string `json:"token_name"`
+	TokenSymbol      string `json:"token_symbol"`
+	FromAddress      string `json:"from_address"`
+	ToAddress        string `json:"to_address"`
+	BlockTimestamp   string `json:"block_timestamp"`
+	ValueDecimal     string `json:"value_decimal"`
+	VerifiedContract bool   `json:"verified_contract"`
 }
