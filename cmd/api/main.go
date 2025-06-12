@@ -53,7 +53,7 @@ func main() {
 	log.Printf("Fetching transaction stats for wallet: %s", address)
 	queryParams := internal.QueryParams{
 		Limit:                       *limit,
-		Cursor:                      *cursor,
+		Cursor:                      getCursorPtr(*cursor),
 		Order:                       *order,
 		FromDate:                    *fromDate,
 		ToDate:                      *toDate,
@@ -65,6 +65,14 @@ func main() {
 		log.Fatalf("Error: %v", err)
 	}
 
+}
+
+// helper func to convert flag value to a ptr
+func getCursorPtr(cursor string) *string {
+	if cursor == "" {
+		return nil // not provided
+	}
+	return &cursor // provided even if empty after trimming
 }
 
 // getConfig returns the first non-empty value from flag, environment variable, or default

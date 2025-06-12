@@ -11,7 +11,7 @@ import (
 // function fetches wallet transaction history
 func (c *Client) GetTokensByWallet(walletAddr string, params QueryParams) ([]*TxDetails, error) {
 
-	// Build the correct URL for wallet history
+	// Build the correct URI for wallet history
 	baseURL := strings.TrimSuffix(c.BaseUrl, "/")
 	historyURL := fmt.Sprintf("%s/wallets/%s/history", baseURL, walletAddr)
 
@@ -28,8 +28,8 @@ func (c *Client) GetTokensByWallet(walletAddr string, params QueryParams) ([]*Tx
 	if params.Limit > 0 {
 		query.Add("limit", fmt.Sprintf("%d", params.Limit))
 	}
-	if params.Cursor != "" {
-		query.Add("cursor", params.Cursor)
+	if params.Cursor != nil {
+		query.Add("cursor", *params.Cursor) // deref ptr
 	}
 	if params.Order != "" {
 		query.Add("order", params.Order)

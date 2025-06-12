@@ -11,13 +11,13 @@ import "net/http"
 
 // requests params to be sent to the API
 type QueryParams struct {
-	Limit                       int    `url:"limit,omitempty"`
-	Cursor                      string `url:"cursor,omitempty"`
-	Order                       string `url:"order,omitempty"`
-	FromDate                    string `url:"from_date,omitempty"`
-	ToDate                      string `url:"to_date,omitempty"`
-	IncludeInternalTransactions bool   `url:"include_internal_transactions,omitempty"`
-	NftMetadata                 bool   `url:"nft_metadata,omitempty"`
+	Limit                       int     `url:"limit,omitempty"`
+	Cursor                      *string `url:"cursor,omitempty"` // adjusted for null return values
+	Order                       string  `url:"order,omitempty"`
+	FromDate                    string  `url:"from_date,omitempty"`
+	ToDate                      string  `url:"to_date,omitempty"`
+	IncludeInternalTransactions bool    `url:"include_internal_transactions,omitempty"`
+	NftMetadata                 bool    `url:"nft_metadata,omitempty"`
 }
 
 // expected responses from the API, split
@@ -160,7 +160,7 @@ type Client struct {
 	APIKey     string
 }
 
-// walletTxHistory.go
+// wallet_main.go
 type TxDetails struct {
 	TransactionHash string `json:"transaction_hash"`
 	FromAddress     string `json:"from_address"`
