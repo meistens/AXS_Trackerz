@@ -18,12 +18,18 @@ type QueryParams struct {
 	ToDate                      string  `url:"to_date,omitempty"`
 	IncludeInternalTransactions bool    `url:"include_internal_transactions,omitempty"`
 	NftMetadata                 bool    `url:"nft_metadata,omitempty"`
+	Format                      string  `json:"format"`
+	ExcludeSpam                 bool    `json:"exclude_spam"`
+	IncludePrices               bool    `json:"include_prices"`
+	NormalizMetadata            bool    `json:"nomalize_metadata"`
+	MediaItems                  bool    `json:"media_items"`
 }
 
 // expected responses from the API, split
 // quite time-consuming to do, use AI, review and compare from actual
 // response saves time than typing it all
 type APIResponse struct {
+	Status   string         `json:"status"`
 	Page     int            `json:"page"`
 	PageSize int            `json:"page_size"`
 	Cursor   string         `json:"-"`
@@ -169,6 +175,14 @@ type TxDetails struct {
 	BlockTimestamp  string `json:"block_timestamp"`
 }
 
+// nft_service.go
+type nftByAddr struct {
+	Amount       string `json:"amount"`
+	TokenID      string `json:"token_id"`
+	TokenAddress string `json:"token_address"`
+	ContractType string `json:"contract_type"`
+}
+
 // ERC20 Token Transfers By Wallet
 type Erc20Tokens struct {
 	TokenName        string `json:"token_name"`
@@ -178,4 +192,89 @@ type Erc20Tokens struct {
 	BlockTimestamp   string `json:"block_timestamp"`
 	ValueDecimal     string `json:"value_decimal"`
 	VerifiedContract bool   `json:"verified_contract"`
+}
+
+// Add this new struct to handle the NFT-specific response from your JSON
+type NFTAPIResponse struct {
+	Status   string    `json:"status"`
+	Page     int       `json:"page"`
+	PageSize int       `json:"page_size"`
+	Cursor   *string   `json:"cursor"` // pointer to handle null values
+	Result   []NFTData `json:"result"`
+}
+
+// Add this new struct for the NFT data from your JSON
+type NFTData struct {
+	Amount             string              `json:"amount"`
+	TokenID            string              `json:"token_id"`
+	TokenAddress       string              `json:"token_address"`
+	ContractType       string              `json:"contract_type"`
+	OwnerOf            string              `json:"owner_of"`
+	LastMetadataSync   string              `json:"last_metadata_sync"`
+	LastTokenURISync   string              `json:"last_token_uri_sync"`
+	Metadata           string              `json:"metadata"`
+	BlockNumber        string              `json:"block_number"`
+	BlockNumberMinted  string              `json:"block_number_minted"`
+	Name               string              `json:"name"`
+	Symbol             string              `json:"symbol"`
+	TokenHash          string              `json:"token_hash"`
+	TokenURI           string              `json:"token_uri"`
+	MinterAddress      string              `json:"minter_address"`
+	RarityRank         *int                `json:"rarity_rank"`
+	RarityPercentage   *float64            `json:"rarity_percentage"`
+	RarityLabel        *string             `json:"rarity_label"`
+	VerifiedCollection bool                `json:"verified_collection"`
+	PossibleSpam       bool                `json:"possible_spam"`
+	LastSale           *LastSale           `json:"last_sale"`
+	NormalizedMetadata *NormalizedMetadata `json:"normalized_metadata"`
+	CollectionLogo     string              `json:"collection_logo"`
+	CollectionBanner   string              `json:"collection_banner_image"`
+	CollectionCategory string              `json:"collection_category"`
+	ProjectURL         string              `json:"project_url"`
+	WikiURL            string              `json:"wiki_url"`
+	DiscordURL         string              `json:"discord_url"`
+	TelegramURL        string              `json:"telegram_url"`
+	TwitterUsername    string              `json:"twitter_username"`
+	InstagramUsername  string              `json:"instagram_username"`
+	ListPrice          ListPrice           `json:"list_price"`
+	FloorPrice         string              `json:"floor_price"`
+	FloorPriceUSD      string              `json:"floor_price_usd"`
+	FloorPriceCurrency string              `json:"floor_price_currency"`
+}
+
+// Add these new structs referenced in NFTData
+// Modifiable?
+type LastSale struct {
+	Price     *string `json:"price"`
+	Currency  *string `json:"currency"`
+	PriceUSD  *string `json:"price_usd"`
+	Timestamp *string `json:"timestamp"`
+}
+
+type ListPrice struct {
+	Listed        bool    `json:"listed"`
+	Price         *string `json:"price"`
+	PriceCurrency *string `json:"price_currency"`
+	PriceUSD      *string `json:"price_usd"`
+	Marketplace   *string `json:"marketplace"`
+}
+
+// NFTExtract - Simplified struct with only the data you need
+type NFTExtract struct {
+	TokenID            string                 `json:"token_id"`
+	Name               string                 `json:"name"`
+	Owner              string                 `json:"owner"`
+	TokenAddress       string                 `json:"token_address"`
+	ContractType       string                 `json:"contract_type"`
+	FloorPrice         string                 `json:"floor_price"`
+	FloorPriceCurrency string                 `json:"floor_price_currency"`
+	Image              string                 `json:"image"`
+	Description        string                 `json:"description"`
+	Attributes         map[string]interface{} `json:"attributes"`
+	CollectionName     string                 `json:"collection_name"`
+	IsVerified         bool                   `json:"is_verified"`
+	PossibleSpam       bool                   `json:"possible_spam"`
+	RarityRank         *int                   `json:"rarity_rank,omitempty"`
+	LastSalePrice      *string                `json:"last_sale_price,omitempty"`
+	BlockNumber        string                 `json:"block_number"`
 }
