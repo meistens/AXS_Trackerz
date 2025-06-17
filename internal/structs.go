@@ -15,7 +15,7 @@ type APIResponse struct {
 // transactions, more to add, and a mix of wallet and NFT
 // comment every 7th for readability
 type Transactions struct {
-	Amount           string `json:"string"`
+	Amount           string `json:"amount"`
 	TokenID          string `json:"token_id"`
 	TokenAddress     string `json:"token_address"`
 	ContractType     string `json:"contract_type"`
@@ -23,8 +23,7 @@ type Transactions struct {
 	LastMetadataSync string `json:"last_metadata_sync"`
 	LastTokenUriSync string `json:"last_token_uri_sync"`
 
-	// skipped metadata as normalized_metadata is an exact-izh, revisit when taking to
-	// next level
+	// skipped metadata, will add later after tackling other stuff...
 
 	BlockNumber       string  `json:"block_number"`
 	BlockNumberMinted *string `json:"block_number_minted,omitempty"` // string or null
@@ -32,34 +31,37 @@ type Transactions struct {
 	Symbol            string  `json:"symbol"`
 	TokenHash         string  `json:"token_hash"`
 	TokenURI          string  `json:"token_uri"`
-	MinterAddress     string  `json:"minter_address"`
+	MinterAddress     *string `json:"minter_address,omitempty"`
 
 	//
 
-	RarityRank         *int                `json:"rarity_rank"`
-	RarityPercentage   *float64            `json:"rarity_percentage"`
-	RarityLabel        *string             `json:"rarity_label"`
+	RarityRank         *int                `json:"rarity_rank,omitempty"`
+	RarityPercentage   *float64            `json:"rarity_percentage,omitempty"`
+	RarityLabel        *string             `json:"rarity_label,omitempty"`
 	VerifiedCollection bool                `json:"verified_collection"`
 	PossibleSpam       bool                `json:"possible_spam"`
-	LastSale           *LastSale           `json:"last_sale"` // *any
-	NormalizedMetadata *NormalizedMetadata `json:"normalized_metadata"`
+	LastSale           *int                `json:"last_sale,omitempty"`           // *any, come back to this when data is available from other sources
+	NormalizedMetadata *NormalizedMetadata `json:"normalized_metadata,omitempty"` // object with data
 
 	//
 
-	Media                 Media     `json:"media"`
-	CollectionLogo        string    `json:"collection_logo"`
-	CollectionBannerImage string    `json:"collection_banner_image"`
-	CollectionCategory    string    `json:"collection_category"`
-	ProjectURL            string    `json:"project_url"`
-	WikiURL               string    `json:"wiki_url"`
-	DiscordURL            string    `json:"discord_url"`
-	TelegramURL           string    `json:"telegram_url"`
-	TwitterUsername       string    `json:"twitter_username"`
-	InstagramUsername     string    `json:"instagram_username"`
-	ListPrice             ListPrice `json:"list_price"`
-	FloorPrice            *string   `json:"floor_price"`
-	FloorPriceUSD         *string   `json:"floor_price_usd"`
-	FloorPriceCurrency    *string   `json:"floor_price_currency"`
+	Media                 Media  `json:"media"`
+	CollectionLogo        string `json:"collection_logo"`
+	CollectionBannerImage string `json:"collection_banner_image"`
+	CollectionCategory    string `json:"collection_category"`
+	ProjectURL            string `json:"project_url"`
+	WikiURL               string `json:"wiki_url"`
+	DiscordURL            string `json:"discord_url"`
+
+	//
+
+	TelegramURL        string    `json:"telegram_url"`
+	TwitterUsername    string    `json:"twitter_username"`
+	InstagramUsername  string    `json:"instagram_username"`
+	ListPrice          ListPrice `json:"list_price"`
+	FloorPrice         *string   `json:"floor_price,omitempty"`
+	FloorPriceUSD      *string   `json:"floor_price_usd,omitempty"`
+	FloorPriceCurrency *string   `json:"floor_price_currency,omitempty"`
 	//==================================================================
 	//
 	//
@@ -109,12 +111,12 @@ type Transactions struct {
 //
 
 type NormalizedMetadata struct {
-	Name         string      `json:"name"`
-	Description  string      `json:"description"`
-	AnimationURL *string     `json:"animation_url,omitempty"`
-	ExternalLink *string     `json:"external_link,omitempty"`
-	Image        string      `json:"image"`
-	Attributes   []Attribute `json:"attributes"`
+	Name         string       `json:"name"`
+	Description  *string      `json:"description,omitempty"`
+	AnimationURL *string      `json:"animation_url,omitempty"`
+	ExternalLink *string      `json:"external_link,omitempty"`
+	Image        string       `json:"image"`
+	Attributes   *[]Attribute `json:"attributes,omitempty"` // array of data, same keys, different values, can be null
 }
 
 //
@@ -156,10 +158,30 @@ type MediaSize struct {
 
 type ListPrice struct {
 	Listed        bool    `json:"listed"`
-	Price         *string `json:"price"`
-	PriceCurrency *string `json:"price_currency"`
-	PriceUSD      *string `json:"price_usd"`
-	Marketplace   *string `json:"marketplace"`
+	Price         *string `json:"price,omitempty"`
+	PriceCurrency *string `json:"price_currency,omitempty"`
+	PriceUSD      *string `json:"price_usd,omitempty"`
+	Marketplace   *string `json:"marketplace,omitempty"`
+}
+
+// NFTExtract - Simplified struct with only the data you need
+type NFTExtract struct {
+	TokenID            string                 `json:"token_id"`
+	Name               string                 `json:"name"`
+	Owner              string                 `json:"owner"`
+	TokenAddress       string                 `json:"token_address"`
+	ContractType       string                 `json:"contract_type"`
+	FloorPrice         string                 `json:"floor_price"`
+	FloorPriceCurrency string                 `json:"floor_price_currency"`
+	Image              string                 `json:"image"`
+	Description        string                 `json:"description"`
+	Attributes         map[string]interface{} `json:"attributes"`
+	CollectionName     string                 `json:"collection_name"`
+	IsVerified         bool                   `json:"is_verified"`
+	PossibleSpam       bool                   `json:"possible_spam"`
+	RarityRank         *int                   `json:"rarity_rank,omitempty"`
+	LastSalePrice      *string                `json:"last_sale_price,omitempty"`
+	BlockNumber        string                 `json:"block_number"`
 }
 
 //
@@ -274,29 +296,9 @@ type Erc20Tokens struct {
 
 // Add these new structs referenced in NFTData
 // Modifiable?
-type LastSale struct {
-	Price     *string `json:"price"`
-	Currency  *string `json:"currency"`
-	PriceUSD  *string `json:"price_usd"`
-	Timestamp *string `json:"timestamp"`
-}
-
-// NFTExtract - Simplified struct with only the data you need
-type NFTExtract struct {
-	TokenID            string                 `json:"token_id"`
-	Name               string                 `json:"name"`
-	Owner              string                 `json:"owner"`
-	TokenAddress       string                 `json:"token_address"`
-	ContractType       string                 `json:"contract_type"`
-	FloorPrice         string                 `json:"floor_price"`
-	FloorPriceCurrency string                 `json:"floor_price_currency"`
-	Image              string                 `json:"image"`
-	Description        string                 `json:"description"`
-	Attributes         map[string]interface{} `json:"attributes"`
-	CollectionName     string                 `json:"collection_name"`
-	IsVerified         bool                   `json:"is_verified"`
-	PossibleSpam       bool                   `json:"possible_spam"`
-	RarityRank         *int                   `json:"rarity_rank,omitempty"`
-	LastSalePrice      *string                `json:"last_sale_price,omitempty"`
-	BlockNumber        string                 `json:"block_number"`
-}
+// type LastSale struct {
+// 	Price     *string `json:"price"`
+// 	Currency  *string `json:"currency"`
+// 	PriceUSD  *string `json:"price_usd"`
+// 	Timestamp *string `json:"timestamp"`
+// }

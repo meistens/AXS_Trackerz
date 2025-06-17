@@ -44,12 +44,13 @@ func GetNftsByWallet(baseURL, apiKey, walletAddr string, params QueryParams) err
 		fmt.Printf("  Possible Spam: %t\n", nft.PossibleSpam)
 
 		// Show some attributes if available
+		// maps is randomizing maps order
 		if len(nft.Attributes) > 0 {
 			fmt.Printf("  Attributes:\n")
 			count := 0
 			for trait, value := range nft.Attributes {
-				if count >= 3 { // Limit to first 3 attributes for readability
-					fmt.Printf("    ... and %d more\n", len(nft.Attributes)-3)
+				if count >= 4 { // Limit to first 4 attributes for readability
+					fmt.Printf("    ... and %d more\n", len(nft.Attributes)-4)
 					break
 				}
 				fmt.Printf("    %s: %v\n", trait, value)

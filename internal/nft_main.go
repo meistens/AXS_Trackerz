@@ -93,8 +93,8 @@ func extractNFTData(nfts []Transactions) []NFTExtract {
 		// loop and convert attributes to a map for easy access (nested objects taken care of?)
 		//
 		attribs := make(map[string]any)
-		if nft.NormalizedMetadata != nil {
-			for _, attrib := range nft.NormalizedMetadata.Attributes {
+		if nft.NormalizedMetadata != nil && nft.NormalizedMetadata.Attributes != nil {
+			for _, attrib := range *nft.NormalizedMetadata.Attributes {
 				attribs[attrib.TraitType] = attrib.Value
 			}
 		}
@@ -108,8 +108,8 @@ func extractNFTData(nfts []Transactions) []NFTExtract {
 		// Get description
 		//
 		var description string
-		if nft.NormalizedMetadata != nil {
-			description = nft.NormalizedMetadata.Description
+		if nft.NormalizedMetadata != nil && nft.NormalizedMetadata.Description != nil {
+			description = *nft.NormalizedMetadata.Description
 		}
 
 		// handle unsafe ptr derefs
