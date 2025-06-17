@@ -1,15 +1,170 @@
 package internal
 
-import "net/http"
+import (
+	"net/http"
+)
 
-// Moralis Wallet API Response Structures here (could be moved once I get other API responses as I expplore)
-// Separated for ease of access to changes
-// If this is wrong in terms of project structure, I do not care
-// What I care about is making sure I can easily track what what is doing than
-// ruin my mental state later down the line as the project grows in complexity
+type APIResponse struct {
+	Status   string         `json:"status"`
+	Page     int            `json:"page"`
+	PageSize int            `json:"page_size"`
+	Cursor   string         `json:"-"`      // leaving as is
+	Result   []Transactions `json:"result"` // contains the main stuff
+}
+
+// transactions, more to add, and a mix of wallet and NFT
+// comment every 7th for readability
+type Transactions struct {
+	Amount           string `json:"string"`
+	TokenID          string `json:"token_id"`
+	TokenAddress     string `json:"token_address"`
+	ContractType     string `json:"contract_type"`
+	OwnerOf          string `json:"owner_of"`
+	LastMetadataSync string `json:"last_metadata_sync"`
+	LastTokenUriSync string `json:"last_token_uri_sync"`
+
+	// skipped metadata as normalized_metadata is an exact-izh, revisit when taking to
+	// next level
+
+	BlockNumber       string  `json:"block_number"`
+	BlockNumberMinted *string `json:"block_number_minted,omitempty"` // string or null
+	Name              string  `json:"name"`
+	Symbol            string  `json:"symbol"`
+	TokenHash         string  `json:"token_hash"`
+	TokenURI          string  `json:"token_uri"`
+	MinterAddress     string  `json:"minter_address"`
+
+	//
+
+	RarityRank         *int                `json:"rarity_rank"`
+	RarityPercentage   *float64            `json:"rarity_percentage"`
+	RarityLabel        *string             `json:"rarity_label"`
+	VerifiedCollection bool                `json:"verified_collection"`
+	PossibleSpam       bool                `json:"possible_spam"`
+	LastSale           *LastSale           `json:"last_sale"` // *any
+	NormalizedMetadata *NormalizedMetadata `json:"normalized_metadata"`
+
+	//
+
+	Media                 Media     `json:"media"`
+	CollectionLogo        string    `json:"collection_logo"`
+	CollectionBannerImage string    `json:"collection_banner_image"`
+	CollectionCategory    string    `json:"collection_category"`
+	ProjectURL            string    `json:"project_url"`
+	WikiURL               string    `json:"wiki_url"`
+	DiscordURL            string    `json:"discord_url"`
+	TelegramURL           string    `json:"telegram_url"`
+	TwitterUsername       string    `json:"twitter_username"`
+	InstagramUsername     string    `json:"instagram_username"`
+	ListPrice             ListPrice `json:"list_price"`
+	FloorPrice            *string   `json:"floor_price"`
+	FloorPriceUSD         *string   `json:"floor_price_usd"`
+	FloorPriceCurrency    *string   `json:"floor_price_currency"`
+	//==================================================================
+	//
+	//
+
+	Hash              string `json:"hash"`
+	Nonce             string `json:"nonce"`
+	TransactionIndex  string `json:"transaction_index"`
+	FromAddress       string `json:"from_address"`
+	GasUsed           string `json:"gas_used"`
+	CumulativeGasUsed string `json:"cumulative_gas_used"`
+	InputData         string `json:"input"`
+
+	TransactionHash string `json:"transaction_hash"`
+	TransactionType string `json:"transaction_type"`
+
+	//Verified                 int              `json:"verified"`
+	//Operator                 string           `json:"operator"`
+	//VerifiedCollection       bool             `json:"verified_collection"`
+	FromAddressEntity        *string `json:"from_address_entity,omitempty"`
+	FromAddressEntityLogo    *string `json:"from_address_entity_logo,omitempty"`
+	FromAddressLabel         *string `json:"from_address_label,omitempty"`
+	ToAddressEntity          *string `json:"to_address_entity,omitempty"`
+	ToAddressEntityLogo      *string `json:"to_address_entity_logo,omitempty"`
+	ToAddress                string  `json:"to_address"`
+	ToAddressLabel           *string `json:"to_address_label,omitempty"`
+	Value                    string  `json:"value"`
+	Gas                      string  `json:"gas"`
+	GasPrice                 string  `json:"gas_price"`
+	ReceiptCumulativeGasUsed string  `json:"receipt_cumulative_gas_used"`
+	ReceiptGasUsed           string  `json:"receipt_gas_used"`
+	ReceiptContractAddress   *string `json:"receipt_contract_address,omitempty"`
+	ReceiptStatus            string  `json:"receipt_status"`
+	BlockTimestamp           string  `json:"block_timestamp"`
+
+	BlockHash       string           `json:"block_hash"`
+	TransactionFee  string           `json:"transaction_fee"`
+	MethodLabel     *string          `json:"method_label,omitempty"`
+	NFTTransfers    []NFTTransfer    `json:"nft_transfers"`
+	ERC20Transfers  []ERC20Transfer  `json:"erc20_transfers"`
+	NativeTransfers []NativeTransfer `json:"native_transfers"`
+	Summary         string           `json:"summary"`
+
+	Category             string                `json:"category"`
+	InternalTransactions []InternalTransaction `json:"internal_transactions,omitempty"`
+}
+
 //
 
-// requests params to be sent to the API
+type NormalizedMetadata struct {
+	Name         string      `json:"name"`
+	Description  string      `json:"description"`
+	AnimationURL *string     `json:"animation_url,omitempty"`
+	ExternalLink *string     `json:"external_link,omitempty"`
+	Image        string      `json:"image"`
+	Attributes   []Attribute `json:"attributes"`
+}
+
+//
+
+type Attribute struct {
+	TraitType   string   `json:"trait_type"`
+	Value       any      `json:"value"` // Can be string or number
+	DisplayType *string  `json:"display_type,omitempty"`
+	MaxValue    *int     `json:"max_value,omitempty"`
+	TraitCount  int      `json:"trait_count"`
+	Order       *int     `json:"order,omitempty"`
+	RarityLabel *string  `json:"rarity_label,omitempty"`
+	Count       *int     `json:"count,omitempty"`
+	Percentage  *float64 `json:"percentage,omitempty"`
+}
+
+//
+
+type Media struct {
+	Status           string           `json:"status"`
+	UpdatedAt        string           `json:"updatedAt"`
+	Mimetype         *string          `json:"mimetype,omitempty"`
+	ParentHash       *string          `json:"parent_hash,omitempty"`
+	MediaCollection  *MediaCollection `json:"media_collection,omitempty"`
+	OriginalMediaURL string           `json:"original_media_url"`
+}
+
+type MediaCollection struct {
+	Low    MediaSize `json:"low"`
+	Medium MediaSize `json:"medium"`
+	High   MediaSize `json:"high"`
+}
+
+type MediaSize struct {
+	Height int    `json:"height"`
+	Width  int    `json:"width"`
+	URL    string `json:"url"`
+}
+
+type ListPrice struct {
+	Listed        bool    `json:"listed"`
+	Price         *string `json:"price"`
+	PriceCurrency *string `json:"price_currency"`
+	PriceUSD      *string `json:"price_usd"`
+	Marketplace   *string `json:"marketplace"`
+}
+
+//
+//
+
 type QueryParams struct {
 	Limit                       int     `url:"limit,omitempty"`
 	Cursor                      *string `url:"cursor,omitempty"` // adjusted for null return values
@@ -23,62 +178,6 @@ type QueryParams struct {
 	IncludePrices               bool    `json:"include_prices"`
 	NormalizMetadata            bool    `json:"nomalize_metadata"`
 	MediaItems                  bool    `json:"media_items"`
-}
-
-// expected responses from the API, split
-// quite time-consuming to do, use AI, review and compare from actual
-// response saves time than typing it all
-type APIResponse struct {
-	Status   string         `json:"status"`
-	Page     int            `json:"page"`
-	PageSize int            `json:"page_size"`
-	Cursor   string         `json:"-"`
-	Result   []Transactions `json:"result"` // sake of readability
-}
-
-type Transactions struct {
-	Hash              string `json:"hash"`
-	Nonce             string `json:"nonce"`
-	TransactionIndex  string `json:"transaction_index"`
-	FromAddress       string `json:"from_address"`
-	GasUsed           string `json:"gas_used"`
-	CumulativeGasUsed string `json:"cumulative_gas_used"`
-	InputData         string `json:"input"`
-	ContractType      string `json:"contract_type"`
-	TransactionHash   string `json:"transaction_hash"`
-	TransactionType   string `json:"transaction_type"`
-	TokenAddress      string `json:"token_address"`
-	TokenID           string `json:"token_id"`
-	//Amount                   string           `json:"string"`
-	//Verified                 int              `json:"verified"`
-	//Operator                 string           `json:"operator"`
-	//VerifiedCollection       bool             `json:"verified_collection"`
-	FromAddressEntity        *string               `json:"from_address_entity,omitempty"`
-	FromAddressEntityLogo    *string               `json:"from_address_entity_logo,omitempty"`
-	FromAddressLabel         *string               `json:"from_address_label,omitempty"`
-	ToAddressEntity          *string               `json:"to_address_entity,omitempty"`
-	ToAddressEntityLogo      *string               `json:"to_address_entity_logo,omitempty"`
-	ToAddress                string                `json:"to_address"`
-	ToAddressLabel           *string               `json:"to_address_label,omitempty"`
-	Value                    string                `json:"value"`
-	Gas                      string                `json:"gas"`
-	GasPrice                 string                `json:"gas_price"`
-	ReceiptCumulativeGasUsed string                `json:"receipt_cumulative_gas_used"`
-	ReceiptGasUsed           string                `json:"receipt_gas_used"`
-	ReceiptContractAddress   *string               `json:"receipt_contract_address,omitempty"`
-	ReceiptStatus            string                `json:"receipt_status"`
-	BlockTimestamp           string                `json:"block_timestamp"`
-	BlockNumber              string                `json:"block_number"`
-	BlockHash                string                `json:"block_hash"`
-	TransactionFee           string                `json:"transaction_fee"`
-	MethodLabel              *string               `json:"method_label,omitempty"`
-	NFTTransfers             []NFTTransfer         `json:"nft_transfers"`
-	ERC20Transfers           []ERC20Transfer       `json:"erc20_transfers"`
-	NativeTransfers          []NativeTransfer      `json:"native_transfers"`
-	Summary                  string                `json:"summary"`
-	PossibleSpam             bool                  `json:"possible_spam"`
-	Category                 string                `json:"category"`
-	InternalTransactions     []InternalTransaction `json:"internal_transactions,omitempty"`
 }
 
 type InternalTransaction struct {
@@ -134,27 +233,6 @@ type NFTTransfer struct {
 	NormalizedMetadata    *NormalizedMetadata `json:"normalized_metadata,omitempty"`
 }
 
-type NormalizedMetadata struct {
-	Name         string      `json:"name"`
-	Description  string      `json:"description"`
-	AnimationURL *string     `json:"animation_url,omitempty"`
-	ExternalLink *string     `json:"external_link,omitempty"`
-	Image        string      `json:"image"`
-	Attributes   []Attribute `json:"attributes"`
-}
-
-type Attribute struct {
-	TraitType   string   `json:"trait_type"`
-	Value       any      `json:"value"` // Can be string or number
-	DisplayType *string  `json:"display_type,omitempty"`
-	MaxValue    *int     `json:"max_value,omitempty"`
-	TraitCount  int      `json:"trait_count"`
-	Order       *int     `json:"order,omitempty"`
-	RarityLabel *string  `json:"rarity_label,omitempty"`
-	Count       *int     `json:"count,omitempty"`
-	Percentage  *float64 `json:"percentage,omitempty"`
-}
-
 type NativeTransfer struct {
 	// Add fields as needed when native transfers are present
 }
@@ -194,54 +272,6 @@ type Erc20Tokens struct {
 	VerifiedContract bool   `json:"verified_contract"`
 }
 
-// Add this new struct to handle the NFT-specific response from your JSON
-type NFTAPIResponse struct {
-	Status   string    `json:"status"`
-	Page     int       `json:"page"`
-	PageSize int       `json:"page_size"`
-	Cursor   *string   `json:"cursor"` // pointer to handle null values
-	Result   []NFTData `json:"result"`
-}
-
-// Add this new struct for the NFT data from your JSON
-type NFTData struct {
-	Amount             string              `json:"amount"`
-	TokenID            string              `json:"token_id"`
-	TokenAddress       string              `json:"token_address"`
-	ContractType       string              `json:"contract_type"`
-	OwnerOf            string              `json:"owner_of"`
-	LastMetadataSync   string              `json:"last_metadata_sync"`
-	LastTokenURISync   string              `json:"last_token_uri_sync"`
-	Metadata           string              `json:"metadata"`
-	BlockNumber        string              `json:"block_number"`
-	BlockNumberMinted  string              `json:"block_number_minted"`
-	Name               string              `json:"name"`
-	Symbol             string              `json:"symbol"`
-	TokenHash          string              `json:"token_hash"`
-	TokenURI           string              `json:"token_uri"`
-	MinterAddress      string              `json:"minter_address"`
-	RarityRank         *int                `json:"rarity_rank"`
-	RarityPercentage   *float64            `json:"rarity_percentage"`
-	RarityLabel        *string             `json:"rarity_label"`
-	VerifiedCollection bool                `json:"verified_collection"`
-	PossibleSpam       bool                `json:"possible_spam"`
-	LastSale           *LastSale           `json:"last_sale"`
-	NormalizedMetadata *NormalizedMetadata `json:"normalized_metadata"`
-	CollectionLogo     string              `json:"collection_logo"`
-	CollectionBanner   string              `json:"collection_banner_image"`
-	CollectionCategory string              `json:"collection_category"`
-	ProjectURL         string              `json:"project_url"`
-	WikiURL            string              `json:"wiki_url"`
-	DiscordURL         string              `json:"discord_url"`
-	TelegramURL        string              `json:"telegram_url"`
-	TwitterUsername    string              `json:"twitter_username"`
-	InstagramUsername  string              `json:"instagram_username"`
-	ListPrice          ListPrice           `json:"list_price"`
-	FloorPrice         string              `json:"floor_price"`
-	FloorPriceUSD      string              `json:"floor_price_usd"`
-	FloorPriceCurrency string              `json:"floor_price_currency"`
-}
-
 // Add these new structs referenced in NFTData
 // Modifiable?
 type LastSale struct {
@@ -249,14 +279,6 @@ type LastSale struct {
 	Currency  *string `json:"currency"`
 	PriceUSD  *string `json:"price_usd"`
 	Timestamp *string `json:"timestamp"`
-}
-
-type ListPrice struct {
-	Listed        bool    `json:"listed"`
-	Price         *string `json:"price"`
-	PriceCurrency *string `json:"price_currency"`
-	PriceUSD      *string `json:"price_usd"`
-	Marketplace   *string `json:"marketplace"`
 }
 
 // NFTExtract - Simplified struct with only the data you need

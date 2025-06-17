@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func (c *Client) getNftsByAddress(walletAddr string, params QueryParams) ([]NFTData, error) {
+func (c *Client) getNftsByAddress(walletAddr string, params QueryParams) ([]Transactions, error) {
 	// GET baseURL/{address}/nft
 	//
 	baseURL := strings.TrimSuffix(c.BaseUrl, "/")
@@ -74,7 +74,7 @@ func (c *Client) getNftsByAddress(walletAddr string, params QueryParams) ([]NFTD
 
 	// Parse JSON Data
 	//
-	var nftResponse NFTAPIResponse
+	var nftResponse APIResponse
 	if err := json.Unmarshal(body, &nftResponse); err != nil {
 		return nil, fmt.Errorf("failed to parse JSON: %w", err)
 	}
@@ -84,7 +84,7 @@ func (c *Client) getNftsByAddress(walletAddr string, params QueryParams) ([]NFTD
 
 // Function extracts NFT Data From the Full NFT Response
 // Pass NFT Data, Returns With Data Strictly Needed
-func extractNFTData(nfts []NFTData) []NFTExtract {
+func extractNFTData(nfts []Transactions) []NFTExtract {
 	var extractedNFTData []NFTExtract
 
 	// loop through the NFTData struct
@@ -112,14 +112,18 @@ func extractNFTData(nfts []NFTData) []NFTExtract {
 			description = nft.NormalizedMetadata.Description
 		}
 
-		// Get last sale price
-		// since it sometimes returns null, handle differently
-		// using modifiable data?, all this is a work
-		// in progress, so test and refactor
-		var lastSalePrice *string
-		if nft.LastSale != nil && nft.LastSale.Price != nil {
-			lastSalePrice = nft.LastSale.Price
+		// handle unsafe ptr derefs
+		var floorPrice, floorPriceCurrency string
+		if nft.FloorPrice != nil {
+			floorPrice = *nft.FloorPrice
 		}
+
+		if nft.FloorPriceCurrency != nil {
+			floorPriceCurrency = *nft.FloorPriceCurrency
+		}
+		// if nft.LastSale != nil && nft.LastSale.Price != nil {
+		// 	lastSalePrice = *nft.LastSale.Price
+		// }
 
 		extractedNFTData = append(extractedNFTData, NFTExtract{
 			TokenID:            nft.TokenID,
@@ -127,8 +131,8 @@ func extractNFTData(nfts []NFTData) []NFTExtract {
 			Owner:              nft.OwnerOf,
 			TokenAddress:       nft.TokenAddress,
 			ContractType:       nft.ContractType,
-			FloorPrice:         nft.FloorPrice,
-			FloorPriceCurrency: nft.FloorPriceCurrency,
+			FloorPrice:         floorPrice,
+			FloorPriceCurrency: floorPriceCurrency,
 			Image:              imgURL,
 			Description:        description,
 			Attributes:         attribs,
@@ -136,7 +140,6 @@ func extractNFTData(nfts []NFTData) []NFTExtract {
 			IsVerified:         nft.VerifiedCollection,
 			PossibleSpam:       nft.PossibleSpam,
 			RarityRank:         nft.RarityRank,
-			LastSalePrice:      lastSalePrice,
 			BlockNumber:        nft.BlockNumber,
 		})
 	}
