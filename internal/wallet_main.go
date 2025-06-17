@@ -31,9 +31,9 @@ func (c *Client) GetTokensByWallet(walletAddr string, params QueryParams) ([]*Tx
 	if params.Cursor != nil {
 		query.Add("cursor", *params.Cursor) // deref ptr
 	}
-	if params.Order != "" {
-		query.Add("order", params.Order)
-	}
+	// if params.Order != "" {
+	// 	query.Add("order", params.Order)
+	// }
 	if params.FromDate != "" {
 		query.Add("from_date", params.FromDate)
 	}

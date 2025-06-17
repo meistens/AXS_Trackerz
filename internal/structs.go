@@ -188,18 +188,19 @@ type NFTExtract struct {
 //
 
 type QueryParams struct {
-	Limit                       int     `url:"limit,omitempty"`
-	Cursor                      *string `url:"cursor,omitempty"` // adjusted for null return values
-	Order                       string  `url:"order,omitempty"`
-	FromDate                    string  `url:"from_date,omitempty"`
-	ToDate                      string  `url:"to_date,omitempty"`
-	IncludeInternalTransactions bool    `url:"include_internal_transactions,omitempty"`
-	NftMetadata                 bool    `url:"nft_metadata,omitempty"`
-	Format                      string  `json:"format"`
-	ExcludeSpam                 bool    `json:"exclude_spam"`
-	IncludePrices               bool    `json:"include_prices"`
-	NormalizMetadata            bool    `json:"nomalize_metadata"`
-	MediaItems                  bool    `json:"media_items"`
+	// Chain  string  `json:"chain"`
+	Limit  int     `url:"limit,omitempty"`
+	Cursor *string `url:"cursor,omitempty"` // adjusted for null return values
+	// Order                       string  `url:"order,omitempty"`
+	FromDate                    string `url:"from_date,omitempty"`
+	ToDate                      string `url:"to_date,omitempty"`
+	IncludeInternalTransactions bool   `url:"include_internal_transactions,omitempty"`
+	NftMetadata                 bool   `url:"nft_metadata,omitempty"`
+	Format                      string `json:"format"`
+	ExcludeSpam                 bool   `json:"exclude_spam"`
+	IncludePrices               bool   `json:"include_prices"`
+	NormalizMetadata            bool   `json:"nomalize_metadata"`
+	MediaItems                  bool   `json:"media_items"`
 }
 
 type InternalTransaction struct {
@@ -276,12 +277,12 @@ type TxDetails struct {
 }
 
 // nft_service.go
-type nftByAddr struct {
-	Amount       string `json:"amount"`
-	TokenID      string `json:"token_id"`
-	TokenAddress string `json:"token_address"`
-	ContractType string `json:"contract_type"`
-}
+// type nftByAddr struct {
+// 	Amount       string `json:"amount"`
+// 	TokenID      string `json:"token_id"`
+// 	TokenAddress string `json:"token_address"`
+// 	ContractType string `json:"contract_type"`
+// }
 
 // ERC20 Token Transfers By Wallet
 type Erc20Tokens struct {

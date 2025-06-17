@@ -34,18 +34,15 @@ Server -> https://deep-index.moralis.io/api/v2.2
         minter_address
         possible_spam
         last_sale
-
-        as experimentation...
-       ** normalizeMetadata.attributes.trait_type|value (which will it show..)
-       ** attributes has 3 arrays of data for runes, charms 4, consumable (choocho is 2)
-       ** media status and updatedat the date it was minted/bought??, doesn't seem to change if overridden with a new purchase of same type...
-       ** opensea as listed marketplace??, floor_price_usd and price_usd original price per item, price and price_currency matches whatever the currency is
+    }
 
 
-       metadata, paired with?
+    metadata, paired with?
        to make??
        scour lb to make a metric???
        what metric exactly...????
-    }
 
-handling sone stuff...
+
+TODO:
+    Query Params
+        Chain (use an array of...)

@@ -61,3 +61,25 @@ func GetNftsByWallet(baseURL, apiKey, walletAddr string, params QueryParams) err
 	}
 	return nil
 }
+
+// get specific tokens, from nft_ByTokenAddr file
+func GetSpecificNFTs(baseURL, apiKey string, tokens []TokenRequest, normalizeMetadata, mediaItems bool) error {
+	client := &Client{
+		HTTPClient: &http.Client{},
+		BaseUrl:    baseURL,
+		APIKey:     apiKey,
+	}
+
+	// fetch NFT data by token address
+	nftData, err := client.nftByTokenAddr(tokens, normalizeMetadata, mediaItems)
+	if err != nil {
+		return fmt.Errorf("failed to fetch NTF metadata: %w", err)
+	}
+
+	// extract and print the metadata
+	extractedData := extractNFTData(nftData)
+	fmt.Printf("Found %d specific NFTs\n", len(extractedData))
+	// TODO: reuse logic
+	// rest of the logic, reuse from previous one since they identical, only missing some
+	return nil
+}

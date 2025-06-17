@@ -30,9 +30,9 @@ func main() {
 
 		// Query parameter flags (used by Wallet and NFT)
 		//
-		limit           = flag.Int("limit", 10, "Limit number of transactions (default: 10)")
-		cursor          = flag.String("cursor", "", "Cursor for pagination")
-		order           = flag.String("order", "DESC", "Order: ASC or DESC (default: DESC)")
+		limit  = flag.Int("limit", 10, "Limit number of transactions (default: 10)")
+		cursor = flag.String("cursor", "", "Cursor for pagination")
+		//	order           = flag.String("order", "DESC", "Order: ASC or DESC (default: DESC)")
 		fromDate        = flag.String("from-date", "", "From date (format: seconds or datestring)")
 		toDate          = flag.String("to-date", "", "To date (format: seconds or datestring)")
 		includeInternal = flag.Bool("include-internal", false, "Include internal transactions")
@@ -74,9 +74,9 @@ func main() {
 	// build query params
 	//
 	queryParams := internal.QueryParams{
-		Limit:                       *limit,
-		Cursor:                      getCursorPtr(*cursor),
-		Order:                       *order,
+		Limit:  *limit,
+		Cursor: getCursorPtr(*cursor),
+		//Order:                       *order,
 		FromDate:                    *fromDate,
 		ToDate:                      *toDate,
 		IncludeInternalTransactions: *includeInternal,
