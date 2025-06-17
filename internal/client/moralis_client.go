@@ -75,4 +75,19 @@ func (c *MoralisClient) GetNFTsByWallet(ctx context.Context, walletAddr string, 
 }
 
 // GetSpecificNFTs func gets specific NFTs by token address and token ID
-func ()
+// Explanation -> Takes the token address and token ID as params, which are in the TokenRequest struct
+// Return -> Data from the RawNFTData struct (pick whichever you fancy)
+func (c *MoralisClient) GetSpecificNFTs(ctx context.Context, tokens []models.TokenRequest) ([]models.RawNFTData, error) {
+	// Format: baseURL/nft/getMultipleNFTs
+	url := fmt.Sprintf("%s/nft/getMultipleNFTs", strings.TrimSuffix(c.baseURL, "/"))
+
+	// Create request body
+	// since this is different and we have to add the address and id to the body
+	// instead of query params
+	reqBody := map[string]interface{}{
+		"tokens":            tokens,
+		"normalizeMetadata": true,  // TODO: change to false to see what it being returned
+		"media_items":       false, // TODO: change to true if you plan to use for GUI or want to seee the media url
+	}
+
+}
