@@ -75,10 +75,12 @@ func (c *Client) nftByTokenAddr(tokens []TokenRequest, normalizeMetadata, mediaI
 		return nil, fmt.Errorf("failed to read response: %w", err)
 	}
 
-	var nftResponse APIResponse
-	if err := json.Unmarshal(body, &nftResponse); err != nil {
+	// endpoint returns an array as opposed to an object with an array inside
+	// so return the data directly as thus
+	var nftData []Transactions
+	if err := json.Unmarshal(body, &nftData); err != nil {
 		return nil, fmt.Errorf("failed to parse JSON: %w", err)
 	}
 
-	return nftResponse.Result, nil
+	return nftData, nil
 }

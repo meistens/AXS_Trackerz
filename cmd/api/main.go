@@ -1,7 +1,9 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 
@@ -25,8 +27,14 @@ func main() {
 		// Action flags
 		// Subject to changes
 		//
-		fetchTx  = flag.Bool("tx", false, "Fetch transactions (default action if no other specified)")
-		fetchNft = flag.Bool("nft", false, "Fetch NFTs")
+		fetchTx          = flag.Bool("tx", false, "Fetch transactions (default action if no other specified)")
+		fetchNft         = flag.Bool("nft", false, "Fetch NFTs")
+		fetchSpecificNft = flag.Bool("specific-nft", false, "Fetch specific NFTs by token address and ID")
+
+		// specific NFT flags
+		tokenAddress = flag.String("token-address", "", "Token contract address (required with -specific-nft)")
+		tokenID      = flag.String("token-id", "", "Token ID (required with -specific-nft)")
+		tokensFile   = flag.String("tokens-file", "", "JSON file containing array of tokens (alternative to single token)")
 
 		// Query parameter flags (used by Wallet and NFT)
 		//
@@ -60,14 +68,25 @@ func main() {
 		log.Fatal("API key is required. Set API_KEY environment variable or use -key flag")
 	}
 
-	if address == "" {
-		log.Fatal("Wallet address is required. Set WALLET_ADDRESS environment variable or use -wallet flag")
+	// validate based on action
+	if *fetchSpecificNft {
+		if *tokensFile == "" && (*tokenAddress == "" || *tokenID == "") {
+			log.Fatal("For specific NFT fetching, provide token address and token id")
+		}
+		if *tokensFile != "" && (*tokenAddress != "" || *tokenID != "") {
+			log.Fatal("Use either tokensFile or individual token flags")
+		}
+	} else {
+		// For wallet-based queries, address is required
+		if address == "" {
+			log.Fatal("Wallet address is required. Set WALLET_ADDRESS environment variable or use -wallet flag")
+		}
 	}
 
 	// determine what action to take
 	// if no specific action is specified, default to tx
 	//
-	if !*fetchNft && !*fetchTx {
+	if !*fetchNft && !*fetchTx && !*fetchSpecificNft {
 		*fetchTx = true
 	}
 
@@ -103,6 +122,33 @@ func main() {
 			log.Fatalf("Error fetching NFTs: %v", err)
 		}
 	}
+
+	if *fetchSpecificNft {
+		log.Printf("Fetching specific NFTs...")
+
+		var tokens []internal.TokenRequest
+		var err error
+
+		if *tokensFile != "" {
+			// load tokens from JSON file
+			tokens, err = loadTokensFromFile(*tokensFile)
+			if err != nil {
+				log.Fatalf("Error loading from file: %v", err)
+			}
+		} else {
+			// use from flags if no JSON file found
+			tokens = []internal.TokenRequest{
+				{
+					TokenAddr: *tokenAddress,
+					TokenID:   *tokenID,
+				},
+			}
+		}
+
+		if err := internal.GetSpecificNFTs(baseURL, key, tokens, *normalizeMetadata, *mediaItems); err != nil {
+			log.Fatalf("Error fetching specific NFTs: %v", err)
+		}
+	}
 }
 
 // helper func to convert flag value to a ptr
@@ -122,4 +168,21 @@ func getConfig(flagValue, envKey, defaultValue string) string {
 		return envValue
 	}
 	return defaultValue
+}
+
+// loadTokensFromFile loads tokens from a JSON file
+func loadTokensFromFile(filename string) ([]internal.TokenRequest, error) {
+	file, err := os.Open(filename)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open file: %w", err)
+	}
+	defer file.Close()
+
+	var tokens []internal.TokenRequest
+	decoder := json.NewDecoder(file)
+	if err := decoder.Decode(&tokens); err != nil {
+		return nil, fmt.Errorf("failed to decode JSON: %w", err)
+	}
+
+	return tokens, nil
 }
