@@ -1,187 +1,126 @@
 package main
 
 import (
+	"cmd/internal/client"
+	"cmd/internal/commands"
+	"cmd/internal/config"
+	"cmd/internal/models"
+	"cmd/internal/service"
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/dotenv-org/godotenvvault"
-
-	"cmd/internal"
 )
 
 func main() {
 	// load env file
 	if err := godotenvvault.Load(); err != nil {
-		log.Println("no env file found")
+		log.Println("No env file found (using system env)")
 	}
 
-	// cli flags
+	// load configs
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatal("Loading config:", err)
+	}
+
+	// parse CLI flags
 	var (
-		apiURL        = flag.String("url", "", "API base URL")
-		apiKey        = flag.String("key", "", "API key")
-		walletAddress = flag.String("wallet", "", "Wallet address to query")
-
-		// Action flags
-		// Subject to changes
-		//
-		fetchTx          = flag.Bool("tx", false, "Fetch transactions (default action if no other specified)")
-		fetchNft         = flag.Bool("nft", false, "Fetch NFTs")
-		fetchSpecificNft = flag.Bool("specific-nft", false, "Fetch specific NFTs by token address and ID")
-
-		// specific NFT flags
-		tokenAddress = flag.String("token-address", "", "Token contract address (required with -specific-nft)")
-		tokenID      = flag.String("token-id", "", "Token ID (required with -specific-nft)")
-		tokensFile   = flag.String("tokens-file", "", "JSON file containing array of tokens (alternative to single token)")
-
-		// Query parameter flags (used by Wallet and NFT)
-		//
-		limit  = flag.Int("limit", 10, "Limit number of transactions (default: 10)")
-		cursor = flag.String("cursor", "", "Cursor for pagination")
-		//	order           = flag.String("order", "DESC", "Order: ASC or DESC (default: DESC)")
-		fromDate        = flag.String("from-date", "", "From date (format: seconds or datestring)")
-		toDate          = flag.String("to-date", "", "To date (format: seconds or datestring)")
-		includeInternal = flag.Bool("include-internal", false, "Include internal transactions")
-		nftMetadata     = flag.Bool("nft-metadata", false, "Include NFT metadata")
-
-		// NFT-specific flags
-		format            = flag.String("format", "", "Response format")
-		excludeSpam       = flag.Bool("exclude-spam", false, "Exclude spam NFTs")
-		normalizeMetadata = flag.Bool("normalize-metadata", false, "Normalize metadata")
-		mediaItems        = flag.Bool("media-items", false, "Include media items")
-		includePrices     = flag.Bool("include-prices", false, "Include price information")
+		walletAddr    = flag.String("wallet", "", "Wallet address")
+		tokenAddr     = flag.String("token-address", "", "Token contract address")
+		tokenID       = flag.String("token-id", "", "Token ID")
+		tokensFile    = flag.String("tokens-file", "", "File with tokens JSON")
+		limit         = flag.Int("limit", 10, "Limit results")
+		excludeSpam   = flag.Bool("exclude-spam", false, "Exclude spam")
+		fetchNFT      = flag.Bool("nft", false, "Fetch NFTs by wallet")
+		fetchSpecific = flag.Bool("specific-nft", false, "Fetch specific NFTs")
 	)
-
-	//
 	flag.Parse()
 
-	// get configs from env or flags
-	// empty string reads automagically env
-	baseURL := getConfig(*apiURL, "URI_RON", "")
-	key := getConfig(*apiKey, "API", "")
-	address := getConfig(*walletAddress, "WALLET_ADDRESS", "")
+	// set up deps
+	moralisClient := client.NewMoralisClient(cfg.MoralisAPIKey, cfg.MoralisBaseURL, cfg.WalletAddress)
+	nftService := service.NewNFTService(moralisClient)
+	nftCommand := commands.NewNFTCommand(nftService)
 
-	// validate
-	if key == "" {
-		log.Fatal("API key is required. Set API_KEY environment variable or use -key flag")
-	}
+	// set up ctx for graceful shutdown
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	// validate based on action
-	if *fetchSpecificNft {
-		if *tokensFile == "" && (*tokenAddress == "" || *tokenID == "") {
-			log.Fatal("For specific NFT fetching, provide token address and token id")
-		}
-		if *tokensFile != "" && (*tokenAddress != "" || *tokenID != "") {
-			log.Fatal("Use either tokensFile or individual token flags")
-		}
-	} else {
-		// For wallet-based queries, address is required
-		if address == "" {
-			log.Fatal("Wallet address is required. Set WALLET_ADDRESS environment variable or use -wallet flag")
-		}
-	}
-
-	// determine what action to take
-	// if no specific action is specified, default to tx
-	//
-	if !*fetchNft && !*fetchTx && !*fetchSpecificNft {
-		*fetchTx = true
-	}
+	// goroutine listens for ctrl + c signal from the terminal
+	go func() {
+		sigChan := make(chan os.Signal, 1)
+		signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+		<-sigChan
+		fmt.Println("\nShutting down...")
+		cancel()
+	}()
 
 	// build query params
-	//
-	queryParams := internal.QueryParams{
-		Limit:  *limit,
-		Cursor: getCursorPtr(*cursor),
-		//Order:                       *order,
-		FromDate:                    *fromDate,
-		ToDate:                      *toDate,
-		IncludeInternalTransactions: *includeInternal,
-		NftMetadata:                 *nftMetadata,
-		Format:                      *format,
-		ExcludeSpam:                 *excludeSpam,
-		NormalizMetadata:            *normalizeMetadata,
-		MediaItems:                  *mediaItems,
-		IncludePrices:               *includePrices,
+	params := models.QueryParams{
+		Limit:       *limit,
+		ExcludeSpam: *excludeSpam,
 	}
 
-	// execute actions
-	//
-	if *fetchTx {
-		log.Printf("Fetching transaction stats for wallet: %s", address)
-		if err := internal.GetTxByWallet(baseURL, key, address, queryParams); err != nil {
-			log.Fatalf("Error: %v", err)
+	// determine wallet address: CLI overrides env
+	var finalWalletAddr string
+	if *walletAddr != "" {
+		finalWalletAddr = *walletAddr // CLI flag provided
+	} else {
+		finalWalletAddr = cfg.WalletAddress // use from env
+	}
+
+	// Execute commands
+	if *fetchNFT {
+		if finalWalletAddr == "" {
+			log.Fatal("Wallet address required: use -wallet flag or set WALLET_ADDRESS env")
 		}
-	}
-
-	if *fetchNft {
-		log.Printf("Fetching NFTs for wallet: %s", address)
-		if err := internal.GetNftsByWallet(baseURL, key, address, queryParams); err != nil {
-			log.Fatalf("Error fetching NFTs: %v", err)
+		if err := nftCommand.GetByWallet(ctx, finalWalletAddr, params); err != nil {
+			log.Fatal("Error:", err)
 		}
-	}
-
-	if *fetchSpecificNft {
-		log.Printf("Fetching specific NFTs...")
-
-		var tokens []internal.TokenRequest
-		var err error
+	} else if *fetchSpecific {
+		var tokens []models.TokenRequest
 
 		if *tokensFile != "" {
-			// load tokens from JSON file
-			tokens, err = loadTokensFromFile(*tokensFile)
+			// Load from file
+			tokens, err = LoadTokensFromFile(*tokensFile)
 			if err != nil {
-				log.Fatalf("Error loading from file: %v", err)
+				log.Fatal("Loading tokens file:", err)
+			}
+		} else if *tokenAddr != "" && *tokenID != "" {
+			// Use single token from flags
+			tokens = []models.TokenRequest{
+				{TokenAddress: *tokenAddr, TokenID: *tokenID},
 			}
 		} else {
-			// use from flags if no JSON file found
-			tokens = []internal.TokenRequest{
-				{
-					TokenAddr: *tokenAddress,
-					TokenID:   *tokenID,
-				},
-			}
+			log.Fatal("Need either -tokens-file or both -token-address and -token-id")
 		}
 
-		if err := internal.GetSpecificNFTs(baseURL, key, tokens, *normalizeMetadata, *mediaItems); err != nil {
-			log.Fatalf("Error fetching specific NFTs: %v", err)
+		if err := nftCommand.GetSpecific(ctx, tokens); err != nil {
+			log.Fatal("Error:", err)
 		}
+	} else {
+		flag.Usage()
 	}
-}
+} // ← This closing brace was missing!
 
-// helper func to convert flag value to a ptr
-func getCursorPtr(cursor string) *string {
-	if cursor == "" {
-		return nil // not provided
-	}
-	return &cursor // provided even if empty after trimming
-}
-
-// getConfig returns the first non-empty value from flag, environment variable, or default
-func getConfig(flagValue, envKey, defaultValue string) string {
-	if flagValue != "" {
-		return flagValue
-	}
-	if envValue := os.Getenv(envKey); envValue != "" {
-		return envValue
-	}
-	return defaultValue
-}
-
-// loadTokensFromFile loads tokens from a JSON file
-func loadTokensFromFile(filename string) ([]internal.TokenRequest, error) {
+// LoadTokensFromFile loads tokens from a JSON file
+// This is now a standalone function, not a method
+func LoadTokensFromFile(filename string) ([]models.TokenRequest, error) {
 	file, err := os.Open(filename)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open file: %w", err)
+		return nil, fmt.Errorf("opening file: %w", err)
 	}
 	defer file.Close()
 
-	var tokens []internal.TokenRequest
-	decoder := json.NewDecoder(file)
-	if err := decoder.Decode(&tokens); err != nil {
-		return nil, fmt.Errorf("failed to decode JSON: %w", err)
+	var tokens []models.TokenRequest
+	if err := json.NewDecoder(file).Decode(&tokens); err != nil {
+		return nil, fmt.Errorf("parsing JSON: %w", err)
 	}
 
 	return tokens, nil

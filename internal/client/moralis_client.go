@@ -1,6 +1,7 @@
 package client
 
 import (
+	"bytes"
 	"cmd/internal/models"
 	"context"
 	"encoding/json"
@@ -15,10 +16,11 @@ type MoralisClient struct {
 	httpClient *http.Client
 	baseURL    string
 	apiKey     string
+	walletAddr string
 }
 
 // NewMoralisClient func creates a new client
-func NewMoralisClient(apiKey, baseURL string) *MoralisClient {
+func NewMoralisClient(apiKey, baseURL, walletAddr string) *MoralisClient {
 	return &MoralisClient{
 		httpClient: &http.Client{Timeout: 30 * time.Second},
 		baseURL:    baseURL,
@@ -90,4 +92,44 @@ func (c *MoralisClient) GetSpecificNFTs(ctx context.Context, tokens []models.Tok
 		"media_items":       false, // TODO: change to true if you plan to use for GUI or want to seee the media url
 	}
 
+	jsonBody, err := json.Marshal(reqBody)
+	if err != nil {
+		return nil, fmt.Errorf("marshaling request(client/moralis_client): %w", err)
+	}
+
+	// Create request
+	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewReader(jsonBody))
+	if err != nil {
+		return nil, fmt.Errorf("creating request(client/moralis_client): %w", err)
+	}
+
+	// Add headers
+	req.Header.Set("X-API-Key", c.apiKey)
+	req.Header.Set("Content-Type", "application/json")
+
+	// Add query params
+	query := req.URL.Query()
+	query.Add("chain", "ronin") // TODO: add multiple chain
+	req.URL.RawQuery = query.Encode()
+
+	// Make request
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("making request(client/moralis_client): %w)", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("API returned status %d", resp.StatusCode)
+	}
+
+	// Since this POST does things different - no query params - and it returns
+	// the array instead of an object of arrays, return the data directly
+	// without parsing
+	var nftData []models.RawNFTData
+	if err := json.NewDecoder(resp.Body).Decode(&nftData); err != nil {
+		return nil, fmt.Errorf("parsing response: %w", err)
+	}
+
+	return nftData, nil
 }
