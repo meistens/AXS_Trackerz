@@ -36,7 +36,7 @@ type APIResponse struct {
 	Result   []RawNFTData `json:"result"`
 }
 
-// RawNFTData struct is the raw data from the Moralis API (add from the Transactions struct)
+// RawNFTData struct is the raw data from the Moralis API
 // what you feel is necessary
 type RawNFTData struct {
 	TokenID            string              `json:"token_id"`
@@ -48,7 +48,8 @@ type RawNFTData struct {
 	PossibleSpam       bool                `json:"possible_spam"`
 	NormalizedMetadata *NormalizedMetadata `json:"normalized_metadata"`
 	RarityRank         *int                `json:"rarity_rank,omitempty"`
-	// ... other fields from your Transactions struct
+	Symbol             string              `json:"symbol"`
+	// ... other fields from the Moralis API data
 }
 
 type NormalizedMetadata struct {

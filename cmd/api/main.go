@@ -32,14 +32,14 @@ func main() {
 
 	// parse CLI flags
 	var (
-		walletAddr    = flag.String("wallet", "", "Wallet address")
-		tokenAddr     = flag.String("token-address", "", "Token contract address")
-		tokenID       = flag.String("token-id", "", "Token ID")
-		tokensFile    = flag.String("tokens-file", "", "File with tokens JSON")
-		limit         = flag.Int("limit", 10, "Limit results")
-		excludeSpam   = flag.Bool("exclude-spam", false, "Exclude spam")
-		fetchNFT      = flag.Bool("nft", false, "Fetch NFTs by wallet")
-		fetchSpecific = flag.Bool("specific-nft", false, "Fetch specific NFTs")
+		walletAddr    = flag.String("wallet", "", "Wallet address")                // wallet addr.
+		tokenAddr     = flag.String("token-address", "", "Token contract address") // token addr.
+		tokenID       = flag.String("token-id", "", "Token ID")                    // token id
+		tokensFile    = flag.String("tokens-file", "", "File with tokens JSON")    // token file, containing token addr. and token id
+		limit         = flag.Int("limit", 10, "Limit results")                     // query param
+		excludeSpam   = flag.Bool("exclude-spam", false, "Exclude spam")           // query param
+		fetchNFT      = flag.Bool("nft", false, "Fetch NFTs by wallet")            // get NFT by wallet addr.
+		fetchSpecific = flag.Bool("specific-nft", false, "Fetch specific NFTs")    // get metadata for NFTs
 	)
 	flag.Parse()
 

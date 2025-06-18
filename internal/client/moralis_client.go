@@ -28,7 +28,9 @@ func NewMoralisClient(apiKey, baseURL, walletAddr string) *MoralisClient {
 	}
 }
 
-// GetNFTsByWallet gets all NFTs for a wallet
+// GetNFTsByWallet
+// Explanation -> Gets all NFTs for a wallet
+// Return -> Data from the Moralis API (pick whatever you fancy, if need arises)
 func (c *MoralisClient) GetNFTsByWallet(ctx context.Context, walletAddr string, params models.QueryParams) ([]models.RawNFTData, error) {
 	// Build URL
 	// Format: baseURL/{address}/nft
@@ -44,7 +46,7 @@ func (c *MoralisClient) GetNFTsByWallet(ctx context.Context, walletAddr string, 
 	req.Header.Set("X-API-Key", c.apiKey)
 
 	// Add query params
-	// TODO: handle multiple chains
+	// TODO: handle multiple chains in the future
 	query := req.URL.Query()
 	query.Add("chain", "ronin")
 	if params.Limit > 0 {
@@ -72,11 +74,11 @@ func (c *MoralisClient) GetNFTsByWallet(ctx context.Context, walletAddr string, 
 		return nil, fmt.Errorf("parsing response (from client/moralis_client): %w", err)
 	}
 
-	// return the result of the queries
+	// Return the result of the queries
 	return apiResp.Result, nil
 }
 
-// GetSpecificNFTs func gets specific NFTs by token address and token ID
+// GetSpecificNFTs
 // Explanation -> Takes the token address and token ID as params, which are in the TokenRequest struct
 // Return -> Data from the RawNFTData struct (pick whichever you fancy)
 func (c *MoralisClient) GetSpecificNFTs(ctx context.Context, tokens []models.TokenRequest) ([]models.RawNFTData, error) {

@@ -19,7 +19,7 @@ type Config struct {
 func Load() (*Config, error) {
 	cfg := &Config{
 		MoralisAPIKey:  getEnv("MORALIS_API_KEY", ""),
-		MoralisBaseURL: getEnv("MORALIS_BASE_URL", "https://deep-index.moralis.io/api/v2.2"),
+		MoralisBaseURL: getEnv("MORALIS_BASE_URL", ""),
 		WalletAddress:  getEnv("WALLET_ADDRESS", ""),
 		Port:           getEnv("PORT", "8080"),
 		LogLevel:       getEnv("LOG_LEVEL", "info"),
