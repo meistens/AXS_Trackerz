@@ -6,8 +6,8 @@ import (
 	"cmd/internal/config"
 	"cmd/internal/models"
 	"cmd/internal/service"
+	"cmd/pkg/utils"
 	"context"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -88,7 +88,7 @@ func main() {
 
 		if *tokensFile != "" {
 			// Load from file
-			tokens, err = LoadTokensFromFile(*tokensFile)
+			tokens, err = utils.LoadTokensFromFile(*tokensFile)
 			if err != nil {
 				log.Fatal("Loading tokens file:", err)
 			}
@@ -107,21 +107,4 @@ func main() {
 	} else {
 		flag.Usage()
 	}
-} // ← This closing brace was missing!
-
-// LoadTokensFromFile loads tokens from a JSON file
-// This is now a standalone function, not a method
-func LoadTokensFromFile(filename string) ([]models.TokenRequest, error) {
-	file, err := os.Open(filename)
-	if err != nil {
-		return nil, fmt.Errorf("opening file: %w", err)
-	}
-	defer file.Close()
-
-	var tokens []models.TokenRequest
-	if err := json.NewDecoder(file).Decode(&tokens); err != nil {
-		return nil, fmt.Errorf("parsing JSON: %w", err)
-	}
-
-	return tokens, nil
 }
