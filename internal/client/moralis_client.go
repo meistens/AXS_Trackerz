@@ -3,6 +3,7 @@ package client
 import (
 	"bytes"
 	"cmd/internal/models"
+	"cmd/pkg/logger"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -17,29 +18,51 @@ type MoralisClient struct {
 	baseURL    string
 	apiKey     string
 	walletAddr string
+	logger     *logger.Logger
 }
 
 // NewMoralisClient func creates a new client
 func NewMoralisClient(apiKey, baseURL, walletAddr string) *MoralisClient {
-	return &MoralisClient{
+	log := logger.New().WithGroup("moralis_client")
+
+	client := &MoralisClient{
 		httpClient: &http.Client{Timeout: 30 * time.Second},
 		baseURL:    baseURL,
 		apiKey:     apiKey,
+		logger:     log,
 	}
+
+	log.Info("Moralis client initalized",
+		"base_url", baseURL,
+		"timeout", "30s",
+	)
+	return client
 }
 
 // GetNFTsByWallet
 // Explanation -> Gets all NFTs for a wallet
 // Return -> Data from the Moralis API (pick whatever you fancy, if need arises)
 func (c *MoralisClient) GetNFTsByWallet(ctx context.Context, walletAddr string, params models.QueryParams) ([]models.RawNFTData, error) {
-	// Build URL
+	start := time.Now()
+
+	// Log request starts
+	c.logger.Info("Starting NFT wallet request",
+		"wallet_address", walletAddr,
+		"limit", params.Limit,
+		"exclude_spam", params.ExcludeSpam,
+	)
+
+	// Build URL, make request
 	// Format: baseURL/{address}/nft
 	url := fmt.Sprintf("%s/%s/nft", strings.TrimSuffix(c.baseURL, "/"), walletAddr)
 
-	// Create request
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
-		return nil, fmt.Errorf("creating request(from client/moralis_client.go/del. later): %w", err)
+		c.logger.Error("Failed to create request",
+			"error", err,
+			"wallet_address", walletAddr,
+		)
+		return nil, fmt.Errorf("creating request: %w", err)
 	}
 
 	// Set header
@@ -60,19 +83,43 @@ func (c *MoralisClient) GetNFTsByWallet(ctx context.Context, walletAddr string, 
 	// Make request
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("making request(from client/moralis_client): %w", err)
+		c.logger.Error("error", err,
+			"wallet_address", walletAddr,
+			"url", url,
+			"duration", time.Since(start))
+		return nil, fmt.Errorf("making request: %w", err)
 	}
 	defer resp.Body.Close()
 
+	// log response
+	duration := time.Since(start)
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("API returned status %d(from client/morails_client.go)", resp.StatusCode)
+		c.logger.Error("API request failed",
+			"status_code", resp.StatusCode,
+			"status", resp.Status,
+			"wallet_address", walletAddr,
+			"duration", duration,
+		)
+		return nil, fmt.Errorf("API returned status %d", resp.StatusCode)
 	}
 
 	// Parse response, we need the queries sent
 	var apiResp models.APIResponse
 	if err := json.NewDecoder(resp.Body).Decode(&apiResp); err != nil {
-		return nil, fmt.Errorf("parsing response (from client/moralis_client): %w", err)
+		c.logger.Error("Failed to parse respsonse",
+			"error", err,
+			"wallet_address", walletAddr,
+		)
+		return nil, fmt.Errorf("parsing response: %w", err)
 	}
+
+	// log success
+	c.logger.Info("NFT wallet request completed",
+		"wallet_address", walletAddr,
+		"nfts_found", len(apiResp.Result),
+		"duration", duration,
+		"status_code", resp.StatusCode,
+	)
 
 	// Return the result of the queries
 	return apiResp.Result, nil
